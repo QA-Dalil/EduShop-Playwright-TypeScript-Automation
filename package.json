@@ -9,6 +9,7 @@
     "test:bugs": "playwright test -c playwright.bugs.config.ts",
     "test:headed": "playwright test tests/ui --headed",
     "test:debug": "playwright test --debug",
+    "capture:evidence": "node scripts/capture-evidence.mjs",
     "report": "playwright show-report",
     "typecheck": "tsc --noEmit"
   },
