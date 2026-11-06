@@ -1,8 +1,8 @@
 <div align="center">
 
-# EduShop Playwright TypeScript Automation
+# EduShop Playwright Automation
 
-### Browser journeys, API checks, and reproducible bug investigations for EduShop
+**UI and API test suite for the [EduShop](https://github.com/BayanAlhassoun/E-Commerce-test-project-for-API---JMeter---Automation) e-commerce application**
 
 ![Playwright](https://img.shields.io/badge/Playwright-1.64-2EAD33?style=flat-square&logo=playwright&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)
@@ -11,76 +11,61 @@
 
 </div>
 
-## Overview
+## At a glance
 
-This project tests the real [EduShop](https://github.com/BayanAlhassoun/E-Commerce-test-project-for-API---JMeter---Automation) Angular storefront and ASP.NET Core API with Playwright and TypeScript. Its **68 automated checks** cover authentication, catalog browsing, cart, checkout, orders, wishlist, reviews, and admin permissions. The [coverage map](TEST_COVERAGE.md) lists the remaining scenarios.
-
-**Verified local run:** 68 passed (47 API, 21 browser) against EduShop in Docker; TypeScript typecheck passed. A separate [bug investigation](BUG_REPORT.md) reproduced four defects. Those deliberately failing checks are kept out of the main CI suite. The Actions badge will show CI status after this repository is published to GitHub.
-
-## Test flow
-
-```text
-Start EduShop in Docker → verify public catalog and API → sign in as customer
-→ add and update cart items → place an order → verify order history
-→ check wishlist and reviews → verify admin and customer permissions
-```
-
-Playwright uses a new browser context per UI test, one worker for the shared seeded customer, and API cleanup for temporary cart, wishlist, review, and product data. The checkout journey creates a real order. Screenshots, video, and traces are retained on failure; the HTML report is uploaded by GitHub Actions.
+- **68 passing checks:** 47 API and 21 browser tests.
+- Covers authentication, catalog, cart, checkout, orders, wishlist, reviews, and admin access.
+- Runs against the Angular UI and ASP.NET Core API in Docker.
+- GitHub Actions runs typecheck and tests on every push and pull request; failure artifacts include an HTML report and traces.
+- Four confirmed defects have separate reproductions in [`tests/bugs`](tests/bugs) and findings in [BUG_REPORT.md](BUG_REPORT.md). They are excluded from the passing CI suite.
 
 ## Run locally
 
-1. Install Node.js 22+ and Docker Desktop with Linux containers.
-2. Start [EduShop](https://github.com/BayanAlhassoun/E-Commerce-test-project-for-API---JMeter---Automation) from its own checkout with `docker compose up --build -d`. Wait for `http://localhost:4200` and `http://localhost:5000/api/product`.
-3. Use a disposable seeded database. Checkout tests create orders and reduce inventory.
-4. In this repository, run:
+**Requirements:** Node.js 22+, Docker Desktop with Linux containers, and a disposable EduShop database. Checkout tests create orders and change inventory.
 
-```bash
-npm ci
-npx playwright install chromium
-npm run typecheck
-npm test
-npm run report
-```
+1. Start [EduShop](https://github.com/BayanAlhassoun/E-Commerce-test-project-for-API---JMeter---Automation) from its own checkout:
 
-Run a subset or the separate bug reproductions:
+   ```bash
+   docker compose up --build -d
+   ```
 
-```bash
-npm run test:ui
-npm run test:api
-npm run test:bugs
-```
+2. In this repository, run:
 
-`npm run test:bugs` currently exits with four failures because it asserts the correct behavior where EduShop has confirmed bugs. Its separate HTML report is written to `bug-report/`. This suite creates a four-product order and consumes inventory; run it on a disposable database.
+   ```bash
+   npm ci
+   npx playwright install chromium
+   npm run typecheck
+   npm test
+   ```
 
-Optional environment variables: `EDUSHOP_UI_URL`, `EDUSHOP_API_URL`, `EDUSHOP_CUSTOMER_EMAIL`, and `EDUSHOP_CUSTOMER_PASSWORD`. The default URLs are `http://localhost:4200` and `http://localhost:5000`. The default customer is EduShop's seeded demo account.
+The default UI and API addresses are `http://localhost:4200` and `http://localhost:5000`. Override them with `EDUSHOP_UI_URL` and `EDUSHOP_API_URL`. For a different seeded customer, set `EDUSHOP_CUSTOMER_EMAIL` and `EDUSHOP_CUSTOMER_PASSWORD`.
 
-## Evidence
+| Command | Purpose |
+| --- | --- |
+| `npm run test:api` | API tests only |
+| `npm run test:ui` | Browser tests only |
+| `npm run report` | Open the local HTML report |
+| `npm run test:bugs` | Reproduce known defects; four tests fail by design |
+
+The bug suite creates an order and changes inventory. Run it against a disposable database.
+
+## Results and evidence
+
+The main suite passed **68/68** in the [GitHub Actions run](https://github.com/QA-Dalil/EduShop-Playwright-TypeScript-Automation/actions/runs/42263175483). See [TEST_COVERAGE.md](TEST_COVERAGE.md) for the coverage map and remaining scenarios.
 
 | Catalog | Product detail |
 | --- | --- |
-| ![EduShop catalog during the verified run](docs/images/catalog.png) | ![EduShop product detail during the verified run](docs/images/product-detail.png) |
+| ![EduShop catalog](docs/images/catalog.png) | ![EduShop product detail](docs/images/product-detail.png) |
 
-Regenerate these read-only screenshots with `npm run capture:evidence` while EduShop is running. The successful local HTML report is generated but ignored by Git; CI uploads it as an artifact after each run, including failures.
+Regenerate the screenshots with `npm run capture:evidence` while EduShop is running. CI reports and traces are available as workflow artifacts.
 
-## Structure
+## Project layout
 
 ```text
-tests/api/                        API behavior, contracts, and permissions
-tests/ui/                         Browser journeys
-tests/bugs/                       Separate bug reproductions
-tests/support/                    Shared authentication and data helpers
-scripts/capture-evidence.mjs      README screenshot capture
-docs/images/                      Screenshots from the verified run
-.github/workflows/playwright.yml  Docker-based GitHub Actions pipeline
-playwright.config.ts              Main projects and HTML reporter
-playwright.bugs.config.ts         Separate bug investigation reporter
-TEST_COVERAGE.md                  Coverage map and next scenarios
-BUG_REPORT.md                     Expected vs actual bug evidence
+tests/api/      API checks
+tests/ui/       Browser journeys
+tests/bugs/     Known-defect reproductions
+tests/support/  Shared test helpers
 ```
 
-## Notes
-
-- The workflow checks out the public EduShop source separately, starts PostgreSQL, API, and UI with Docker Compose, then runs the suite on every push and pull request.
-- The workflow uses EduShop's current default branch. Pin its checkout to a commit in `.github/workflows/playwright.yml` for reproducible historical runs.
-- EduShop offers Card, PayPal, BankTransfer, and CashOnDelivery in the checkout form. The journey checks order placement with CashOnDelivery; it does not test a payment gateway.
-- Related project: [EduShop Selenium Java Automation](https://github.com/QA-Dalil/EduShop-Selenium-Java-Automation).
+Related project: [EduShop Selenium Java Automation](https://github.com/QA-Dalil/EduShop-Selenium-Java-Automation).
